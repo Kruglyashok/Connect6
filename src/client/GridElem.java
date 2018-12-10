@@ -17,10 +17,12 @@ import java.awt.geom.Ellipse2D;
  */
  public class GridElem {
         boolean checked = false;
+        Color elemColor;
         Point pos = new Point(); //position of the filed, imaginary
         Point coord = new Point(); //coords on the grid
         Point length = new Point(); //length of lines
-        GridElem(int i, int j,int startPosX,int startPosY,int lengthX, int lengthY) {
+        GridElem(int i, int j,int startPosX,int startPosY,int lengthX, int lengthY, Color elemColor) {
+            this.elemColor = elemColor;
             pos.x = i;
             pos.y = j;
             coord.x = startPosX;
@@ -34,7 +36,7 @@ import java.awt.geom.Ellipse2D;
             length.x = lengthX;
             length.y = lengthY;
         }
-        public void drawElem(Graphics2D g2d, Color myColor) {
+        public void drawElem(Graphics2D g2d) {
             g2d.setColor(Color.BLACK);
             g2d.setStroke(new BasicStroke(2));
             g2d.drawLine(coord.x + pos.x*length.x,
@@ -47,7 +49,7 @@ import java.awt.geom.Ellipse2D;
                         coord.y + pos.y*length.y                        
             );
             if (checked) {
-                g2d.setColor(myColor);
+                g2d.setColor(elemColor);
                 Ellipse2D circle = new Ellipse2D.Float(coord.x + pos.x*length.x - length.x/4,
                                             coord.y + pos.y*length.y - length.y/4,
                                             length.x/2,

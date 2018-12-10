@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package client;
 
 import java.awt.BasicStroke;
@@ -29,11 +24,6 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-/**
- *
- * @author One
- */
-
 public class ClientFrame {
    InetAddress ip = null;
     int port = 9876;
@@ -42,56 +32,147 @@ public class ClientFrame {
     DataOutputStream dos;
     ObjectInputStream ois;
     ObjectOutputStream oos;
-    
+    public int gameStance;
+    private int counter = 0;
     public ArrayList<GridElem> points;
     private Point fieldSize = new Point();
-    private Point myStep1;
-    private Point myStep2;
-    private boolean myTurn = true;
-    protected Color myColor;
-    
+    public Color myColor;
+    public Point[] move = new Point[2];
     public class ClientPanel extends JPanel {
-        private Point fieldSize = new Point(); //size of the play grid
- // possible points to make a move
-        public ClientPanel() {}
-        public ClientPanel(ArrayList<GridElem> points) {
+    private Point fieldSize = new Point(); //size of the play grid
+    
+    private Color myColor;
+    boolean isGameOver() {
+        int count =0;
+        Color c = myColor;
+        //vertical check
+        for (int i =0; i < fieldSize.x +1; i++) {
+            for (int j =0; j < fieldSize.y + 1; j++) {
+            if (points.get(j*20+i).checked && points.get(j*20+i).elemColor.getRGB() == c.getRGB()) {
+            count++;
+            }
+            else {
+                count = 0;
+            }
+            if(count == 6) return true;
+            }
+        }
+        //horizontal check
+        count = 0;
+        for (int i = 0; i < fieldSize.y + 1; i++) {
+            for (int j =0; j < fieldSize.x + 1; j++) {
+            if (points.get(i*20+j).checked && points.get(i*20+j).elemColor.getRGB() == c.getRGB()) {
+            count++;
+            }
+            else {
+                count = 0;
+            }
+            if(count == 6) return true;
+            }
+        
+        //diag check lower top-left-to-bot-right
+        for (int rowStart = 0; rowStart  < fieldSize.x - 5; rowStart++) {
+            count = 0;
+            for (int row = rowStart, col  = 0; row < fieldSize.x+1 && col < fieldSize.y +1; row++, col++ ) {
+                if (points.get(col*20 + row).checked && points.get(col*20 + row).elemColor.getRGB() == c.getRGB()) {
+                count++;
+                }
+                else {
+                count = 0;
+                }
+                if(count == 6) return true;
+            }
+        }
+       
+        //diag check upper top-left-to-bottom-right
+        for(int colStart = 1; colStart < fieldSize.x - 5; colStart++){
+        count = 0;
+        int row, col;
+        for( row = 0, col = colStart; row < fieldSize.y + 1 && col < fieldSize.x  +1; row++, col++ ){
+        if (points.get(col*20 + row).checked && points.get(col*20 + row).elemColor.getRGB() == c.getRGB()) {
+            count++;
+        }
+        else {
+          count = 0;
+        }
+        if(count == 6) return true;
+        }
+        }
+        //diag check upper bot-left-to-top-right
+        for (int rowStart = fieldSize.y; rowStart > 5; rowStart--) {
+            count = 0; 
+            int row, col;
+            for (row = rowStart, col = 0; row>0 && col < fieldSize.x+1; row--, col++) {
+                if (points.get(col*20+row).checked && points.get(col*20+row).elemColor.getRGB() == c.getRGB()) {
+                count++;
+                }
+                else {
+                count = 0;
+                }
+                if (count == 6) return true;
+            }
+        }
+        //diag check lower bot-left-to-top-right
+        for (int colStart = 0; colStart < fieldSize.x - 5; colStart++) {
+            count = 0; 
+            int row, col;
+            for (row = fieldSize.y, col = colStart; row > 0 && col < fieldSize.x + 1; row--, col++) {
+                if (points.get(col*20+row).checked && points.get(col*20+row).elemColor.getRGB() == c.getRGB()) {
+                count++;
+                }
+                else {
+                count = 0;
+                }
+                if (count == 6) return true;
+            }
+        }
+        
+        }
+        return false;
+    }
+        public ClientPanel(ArrayList<GridElem> points, Color myColor) {
+        
         fieldSize.x = 19;
         fieldSize.y = 19;
-          MouseAdapter mouseHandler;
+        this.myColor = myColor;
+        MouseAdapter mouseHandler;
             mouseHandler = new MouseAdapter() {
                 @Override 
                 public void mouseClicked(MouseEvent e) {
-                    if (myTurn) {
+                    if (gameStance == 1) {
                     Point clicked = e.getPoint();
                     for (GridElem elem : points) {
                         if (Math.sqrt(Math.pow(elem.coord.x+elem.pos.x*elem.length.x - clicked.x, 2)
-                                + Math.pow(elem.coord.y+elem.pos.y*elem.length.y - clicked.y, 2) ) <= elem.length.x/2) {
-                        System.out.append("int our point\n");
+                                + Math.pow(elem.coord.y+elem.pos.y*elem.length.y - clicked.y, 2) ) <= elem.length.x/2 && (!elem.checked)) {
+                        System.out.append("in our point\n");
+                        if(!elem.checked) {
                         elem.checked = true;
-                        /*
-                        if (myStep1 == null) {
-                        myStep1 = new Point(elem.pos.x, elem.pos.y);
-                        }
-                        else {
-                        myStep2 = new Point(elem.pos.x, elem.pos.y);
-                        new Thread() {
-                            @Override 
-                            public void run() {
-                                try{ 
-                        
-                             if (myStep1 != null && myStep2 != null) {
-                            System.out.append("step not null\n");
-                            oos.writeObject(myStep1);
-                            oos.reset();
-                            oos.writeObject(myStep2);
-                            oos.reset(); 
-                            }
+                        elem.elemColor = myColor;
+                        move[counter] = new Point(elem.pos.x, elem.pos.y);
+                        counter++;
+                        if(counter==2) {
+                        counter =0;
+                        if (isGameOver()) {
+                            try {
+                                gameStance = 3;
+                                oos.writeObject(new SendObject(move[0], move[1], 3, myColor));
+                                
                             } catch (IOException ex) {
-                        Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                                }
+                                Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            }.start();
-                        }*/
+                        }
+                        else{
+                        gameStance = 2;
+                            try {
+                                   System.out.append("move 0_ :" + move[0].x + "  " + move[0].y + "\n" );
+                                   System.out.append("move 1_ :" + move[1].x + "  " + move[1].y + "\n" );
+                                oos.writeObject(new SendObject(move[0], move[1], 1, myColor));
+                            } catch (IOException ex) {
+                                Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                        }
+                        }
                         }
                     }
                 repaint();
@@ -100,6 +181,31 @@ public class ClientFrame {
             };
             addMouseListener(mouseHandler);
             addMouseMotionListener(mouseHandler);
+            new Thread() {
+            @Override
+            public void run() {
+            while(true) {
+                try {
+                    SendObject recvObj = (SendObject)ois.readObject();
+                    System.out.append("i recved obj\n");
+                    gameStance = recvObj.getStance();
+                    points.get(recvObj.getStep1().x*20+recvObj.getStep1().y).checked = true;
+                    System.out.append("move 0 :" + recvObj.getStep1().x + "  " + recvObj.getStep1().y + "\n" );
+                    points.get(recvObj.getStep1().x*20+recvObj.getStep1().y).elemColor = recvObj.getColor();
+                    
+                    points.get(recvObj.getStep2().x*20+recvObj.getStep2().y).checked = true;
+                    points.get(recvObj.getStep2().x*20+recvObj.getStep2().y).elemColor = recvObj.getColor();
+                    System.out.append("move 1 :" + recvObj.getStep2().x + "  " + recvObj.getStep2().y + "\n" );
+                    System.out.append("my gameStance is " + gameStance + "\n");
+                    repaint();
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            }
+            }.start();
         }
         @Override
         public Dimension getPreferredSize() {
@@ -131,10 +237,12 @@ public class ClientFrame {
                 System.out.append("create new grid\n");
              for (int i=0; i < fieldSize.x + 1; ++i) {
                  for (int j =0; j < fieldSize.y + 1; ++j) {
-                     GridElem elem = new GridElem(i,j, startPosX, startPosY, lengthX, lengthY);
+                     GridElem elem = new GridElem(i,j, startPosX, startPosY, lengthX, lengthY, myColor);
                      points.add(elem);
                     }
-                }     
+                }
+            points.get(190).checked = true;
+            points.get(190).elemColor = Color.BLACK;
             }
             else {
                 for(GridElem elem: points) {
@@ -143,21 +251,11 @@ public class ClientFrame {
             }
             g2d.setColor(Color.BLACK);
             g2d.setStroke(new BasicStroke(2));
-             /*for (int i=0; i < fieldSize.x + 1; ++i) {
-                 for (int j =0; j < fieldSize.y + 1; ++j) {
-                 g2d.drawLine(startPosX + i*lengthX,
-                                   j*lengthY,
-                                   startPosX + i*lengthX,
-                                   j*lengthY + lengthY);
-                 
-                 }
-             }*/
             for (GridElem elem : points) {
-                 elem.drawElem(g2d, myColor);
+                 elem.drawElem(g2d);
             }
-          g2d.dispose();
+            g2d.dispose(); 
         }
-    
     }
     private void initConnection() {
         try {
@@ -171,11 +269,17 @@ public class ClientFrame {
             oos = new ObjectOutputStream(cs.getOutputStream());
             ois = new ObjectInputStream(cs.getInputStream());
             System.out.append("obj streams created\n");
+            gameStance = (Integer)ois.readObject();
+            if (gameStance == 1) myColor = Color.WHITE;
+            else myColor = Color.BLACK; 
+            System.out.append("my game Stance   " + gameStance + "\n");
         } catch (UnknownHostException ex) {
             Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } catch (ClassNotFoundException ex) {
+           Logger.getLogger(ClientFrame.class.getName()).log(Level.SEVERE, null, ex);
+       }
     }
     
     public ClientFrame () {
@@ -185,21 +289,18 @@ public class ClientFrame {
             public void run() {
                 fieldSize.x = 19;
                 fieldSize.y = 19;
-                points = new ArrayList<>(fieldSize.x * fieldSize.y);
+                points = new ArrayList<>(fieldSize.x * fieldSize.y);   
                 JFrame clientFrame = new JFrame("ClientFrame");
                 clientFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 clientFrame.setLayout(new BorderLayout());
-                clientFrame.add(new ClientPanel(points));
+                clientFrame.add(new ClientPanel(points, myColor));
                 clientFrame.pack();
                 clientFrame.setLocationRelativeTo(null);
                 clientFrame.setVisible(true);
-            }
-    
+            }    
     });     
     }
-   
     public static void main(String[] args) {
-        new ClientFrame();
+        new ClientFrame();     
     }  
-    
 }

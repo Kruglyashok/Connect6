@@ -1,10 +1,6 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package server;
 
+import client.SendObject;
 import java.awt.Color;
 import java.awt.Point;
 import java.io.DataInputStream;
@@ -16,23 +12,18 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author One
- */
 public class ServerThread extends Thread{
     Socket cs;
     DataInputStream dis;
     DataOutputStream dos;
     ObjectInputStream ois;
     ObjectOutputStream oos;
-    Point myStep1, myStep2;
-    Color myColor;
-    
-    public ServerThread(Socket cs) {
-        myStep1 = new Point();
-        myStep2 = new Point();
+    int gameStance = -1;
+    SendObject mySO;
+    public int myInd;
+    public ServerThread(Socket cs, int myInd) {
         try {
+            this.myInd = myInd;
             this.cs = cs;
             dis = new DataInputStream(cs.getInputStream());
             dos = new DataOutputStream(cs.getOutputStream());
@@ -42,42 +33,31 @@ public class ServerThread extends Thread{
             Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    public void sendColors() {
-    
+    public void sendColor(int myInd) {
+        try {
+            oos.writeObject(new Integer(myInd + 1));
+        } catch (IOException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     @Override 
     public void run() {
-       /*
         new Thread() {
         @Override 
             public void run() {
-                while(true) {
+                while(gameStance != 3) {
                     try{
-                        myStep1 = (Point) ois.readObject();
-                        myStep2 = (Point) ois.readObject();
-                    } catch (IOException ex) {
-                        Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (ClassNotFoundException ex) {
+                       mySO = (SendObject)ois.readObject();
+                       //Point p = (Point)ois.readObject();
+                       
+                       System.out.append( "inds  " + myInd + "  " + (myInd + 1) % 2 + "\n");
+                       ServerListener.clients.get((myInd + 1) % 2).oos.writeObject(mySO);
+                        
+                    } catch (IOException | ClassNotFoundException ex) {
                         Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         }.start();
-        new Thread() {
-        @Override
-            public void run() {
-                    while(true) {
-                        try {
-                            if (myStep1 != null && myStep2 != null) {
-                                System.out.append(myStep1.x + " " + myStep2.x + " ");
-                            }
-                            Thread.sleep(5000);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-            }
-        }.start();
-        */
     }    
 }
